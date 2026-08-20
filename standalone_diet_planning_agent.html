@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diet Planning Agent - Personalized Diet, Nutrients & Workout System</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #059669;
+            --primary-hover: #047857;
+            --primary-light: #d1fae5;
+            --secondary-color: #0ea5e9;
+            --accent-color: #f59e0b;
+            --dark-slate: #0f172a;
+            --card-bg: #ffffff;
+            --body-bg: #f8fafc;
+            --text-main: #334155;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --radius-lg: 18px;
+            --radius-md: 12px;
+            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+            --transition-fast: all 0.25s ease;
+        }
+
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--body-bg); color: var(--text-main); line-height: 1.6; }
+        .navbar-brand { font-weight: 800; font-size: 1.5rem; color: var(--dark-slate) !important; }
+        .brand-icon {
+            width: 40px; height: 40px; background: linear-gradient(135deg, #10b981, #0ea5e9);
+            color: white; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+        }
+
+        .nav-link {
+            font-weight: 600; cursor: pointer; color: var(--text-main) !important;
+            margin: 0 3px; border-radius: 8px; padding: 8px 14px !important; transition: var(--transition-fast);
+        }
+
+        .nav-link:hover, .nav-link.active { color: var(--primary-color) !important; background-color: var(--primary-light); }
+
+        .btn-primary-action {
+            background: linear-gradient(135deg, var(--primary-color), #10b981);
+            color: white !important; font-weight: 700; border-radius: var(--radius-md); padding: 12px 24px; border: none;
+            box-shadow: 0 6px 16px rgba(5, 150, 105, 0.25); transition: var(--transition-fast);
+        }
+
+        .custom-card {
+            background: var(--card-bg); border-radius: var(--radius-lg); border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-md); padding: 28px; transition: var(--transition-fast);
+        }
+
+        .custom-card:hover { transform: translateY(-3px); box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.1); }
+
+        .metric-card { border-radius: var(--radius-md); padding: 20px; text-align: center; border: 1px solid var(--border-color); background: #ffffff; }
+        .metric-value { font-size: 2rem; font-weight: 800; color: var(--dark-slate); }
+
+        .bmi-indicator-bar {
+            height: 12px; border-radius: 6px; background: linear-gradient(to right, #3b82f6 0%, #10b981 30%, #f59e0b 65%, #ef4444 100%);
+            position: relative; margin: 25px 0 15px 0;
+        }
+
+        .bmi-pointer {
+            position: absolute; top: -8px; width: 28px; height: 28px; background: var(--dark-slate);
+            border: 3px solid #ffffff; border-radius: 50%; transform: translateX(-50%); transition: left 0.8s ease;
+        }
+
+        .meal-card { border-left: 5px solid var(--primary-color); border-radius: var(--radius-md); background: #ffffff; box-shadow: var(--shadow-sm); padding: 18px; margin-bottom: 16px; }
+        .meal-tag { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; padding: 4px 10px; border-radius: 50px; }
+
+        .bg-emerald-light { background: #d1fae5; color: #059669; }
+        .bg-sky-light { background: #e0f2fe; color: #0284c7; }
+        .bg-amber-light { background: #fef3c7; color: #d97706; }
+
+        .page-view { display: none; opacity: 0; transition: opacity 0.3s ease-in-out; }
+        .page-view.active-page { display: block; opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top py-3">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="#" onclick="showPage('home-page')">
+                <span class="brand-icon"><i class="fa-solid fa-leaf"></i></span>
+                Diet Planning <span class="text-success">Agent</span>
+            </a>
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-lg-center">
+                    <li class="nav-item"><a class="nav-link active" id="nav-home" onclick="showPage('home-page')">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" id="nav-planner" onclick="showPage('planner-page')">Diet Planner</a></li>
+                    <li class="nav-item"><a class="nav-link" id="nav-nutrients" onclick="showPage('nutrients-page')"><i class="fa-solid fa-apple-whole me-1"></i>Food & Nutrients</a></li>
+                    <li class="nav-item"><a class="nav-link" id="nav-workouts" onclick="showPage('workouts-page')"><i class="fa-solid fa-dumbbell me-1"></i>Everyday Workouts</a></li>
+                    <li class="nav-item"><a class="nav-link" id="nav-history" onclick="showPage('history-page')"><i class="fa-solid fa-clock-rotate-left me-1"></i>User Progress Data</a></li>
+                    <li class="nav-item"><a class="nav-link" id="nav-analytics" onclick="showPage('analytics-page')"><i class="fa-solid fa-chart-line me-1"></i>Analytics Line Chart</a></li>
+                    <li class="nav-item ms-lg-2">
+                        <button onclick="showPage('planner-page')" class="btn btn-primary-action btn-sm">
+                            <i class="fa-solid fa-wand-magic-sparkles me-1"></i>Start Plan
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- PAGE 1: HOME PAGE -->
+    <div id="home-page" class="page-view active-page">
+        <section class="py-5 text-center">
+            <div class="container">
+                <span class="badge bg-emerald-light text-success px-3 py-2 fs-6 mb-3">Intelligent Diet Planning Agent</span>
+                <h1 class="display-4 fw-bold">Personalized Diet, Nutrients & <span class="text-success">Workouts System</span></h1>
+                <p class="lead text-muted col-lg-8 mx-auto">Analyze physical body parameters, calculate target weight schedules, explore simple food nutrient guides, and track everyday progress.</p>
+                <div class="mt-4 gap-2 d-flex justify-content-center flex-wrap">
+                    <button onclick="showPage('planner-page')" class="btn btn-primary-action btn-lg px-4 py-3">Create My Diet & Workout Plan</button>
+                    <button onclick="showPage('nutrients-page')" class="btn btn-outline-success btn-lg px-4 py-3">Food & Nutrients Guide</button>
+                    <button onclick="showPage('analytics-page')" class="btn btn-outline-primary btn-lg px-4 py-3">View Interaction Line Chart</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- PAGE 2: DIET & TARGET WEIGHT PLANNER FORM -->
+    <div id="planner-page" class="page-view">
+        <div class="container py-5">
+            <div class="col-lg-8 mx-auto">
+                <div class="custom-card">
+                    <h3 class="fw-bold mb-4"><i class="fa-solid fa-sliders text-success me-2"></i>Diet Planning Agent - Form</h3>
+                    <form id="standalone-planner-form">
+                        <div class="row g-3">
+                            <div class="col-md-6"><label class="form-label fw-bold">Full Name</label><input type="text" class="form-control" id="name" placeholder="e.g. Alex Sharma" required></div>
+                            <div class="col-md-3"><label class="form-label fw-bold">Age</label><input type="number" class="form-control" id="age" min="1" max="120" placeholder="21" required></div>
+                            <div class="col-md-3"><label class="form-label fw-bold">Gender</label><select class="form-select" id="gender"><option value="male">Male</option><option value="female">Female</option></select></div>
+                            <div class="col-md-4"><label class="form-label fw-bold">Height (cm)</label><input type="number" class="form-control" id="height" min="50" max="250" placeholder="170" required></div>
+                            <div class="col-md-4"><label class="form-label fw-bold">Current Weight (kg)</label><input type="number" class="form-control" id="weight" min="20" max="300" placeholder="75" required></div>
+                            <div class="col-md-4"><label class="form-label fw-bold text-success">Target Weight (kg)</label><input type="number" class="form-control" id="target_weight" min="20" max="300" placeholder="68 (Optional)"></div>
+                            
+                            <div class="col-12" id="preview-box" style="display: none;">
+                                <div class="p-3 bg-light rounded-3 border d-flex justify-content-between align-items-center">
+                                    <div><small class="text-muted text-uppercase fw-bold">Live BMI Preview</small><div class="h5 mb-0 fw-bold">BMI: <span id="preview-bmi-val" class="text-success">--</span></div></div>
+                                    <div class="text-end"><small class="text-muted">Category</small><div id="preview-bmi-cat" class="fw-bold">--</div></div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6"><label class="form-label fw-bold">Activity Level</label><select class="form-select" id="activity"><option value="sedentary">Sedentary</option><option value="moderately_active" selected>Moderately Active</option><option value="very_active">Very Active</option></select></div>
+                            <div class="col-md-6"><label class="form-label fw-bold">Diet Preference</label><select class="form-select" id="diet_preference"><option value="vegetarian" selected>Vegetarian</option><option value="non_vegetarian">Non-Vegetarian</option><option value="vegan">Vegan</option></select></div>
+                            <div class="col-12"><label class="form-label fw-bold">Fitness Goal</label><select class="form-select" id="goal"><option value="weight_loss" selected>Weight Loss (Calorie Deficit)</option><option value="maintain">Maintain Weight</option><option value="weight_gain">Weight Gain (Calorie Surplus)</option></select></div>
+                        </div>
+                        <button type="submit" class="btn btn-primary-action btn-lg w-100 mt-4"><i class="fa-solid fa-wand-magic-sparkles me-2"></i>Generate My Diet & Workout Schedule</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 3: RESULTS DASHBOARD WITH WEIGHT SCHEDULE TIMELINE -->
+    <div id="results-page" class="page-view">
+        <div class="container py-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <span class="badge bg-success mb-1 px-3 py-2">Diet Planning Agent Report</span>
+                    <h2 class="fw-bold mb-0">Diet & Progress Schedule for <span id="res-user-name">User</span></h2>
+                </div>
+                <button onclick="showPage('planner-page')" class="btn btn-outline-secondary btn-sm rounded-pill px-3"><i class="fa-solid fa-rotate-left me-1"></i> New Assessment</button>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="custom-card mb-4">
+                        <h5 class="fw-bold mb-3 border-bottom pb-2"><i class="fa-solid fa-id-card text-success me-2"></i>User Bio Profile</h5>
+                        <ul class="list-group list-group-flush small">
+                            <li class="list-group-item d-flex justify-content-between px-0"><span class="text-muted">Age / Gender</span><span class="fw-bold" id="res-age-gender">--</span></li>
+                            <li class="list-group-item d-flex justify-content-between px-0"><span class="text-muted">Current / Target Weight</span><span class="fw-bold text-success" id="res-height-weight">--</span></li>
+                            <li class="list-group-item d-flex justify-content-between px-0"><span class="text-muted">Diet Preference</span><span class="badge bg-emerald-light" id="res-diet">--</span></li>
+                            <li class="list-group-item d-flex justify-content-between px-0"><span class="text-muted">Goal</span><span class="badge bg-sky-light" id="res-goal">--</span></li>
+                        </ul>
+                    </div>
+
+                    <div class="custom-card mb-4">
+                        <h5 class="fw-bold mb-3 border-bottom pb-2"><i class="fa-solid fa-weight-scale text-primary me-2"></i>BMI Screening</h5>
+                        <div class="text-center">
+                            <div class="display-4 fw-bold" id="res-bmi">--</div>
+                            <span class="badge bg-success px-3 py-2 fs-6 mt-1" id="res-bmi-cat">Normal</span>
+                            <div class="bmi-indicator-bar"><div class="bmi-pointer" id="res-bmi-pointer" style="left: 50%;"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-8">
+                    <!-- TARGET WEIGHT SCHEDULE TIMELINE -->
+                    <div class="custom-card mb-4 border-success bg-white" id="schedule-card" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+                            <div>
+                                <span class="badge bg-emerald-light text-success mb-1">Target Weight Timeline</span>
+                                <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-calendar-check text-success me-2"></i>Goal Timeline: <span id="sch-cur-wt">--</span> kg &rarr; <span id="sch-tgt-wt">--</span> kg</h5>
+                            </div>
+                            <span class="badge bg-primary fs-6 px-3 py-2" id="sch-weeks-badge">Est. 12 Weeks</span>
+                        </div>
+
+                        <div class="row g-3 text-center mb-4">
+                            <div class="col-4"><div class="p-2 bg-light rounded-3 border"><small class="text-muted fw-bold">Target Delta</small><div class="h5 fw-bold mb-0 text-success" id="sch-delta">-- kg</div></div></div>
+                            <div class="col-4"><div class="p-2 bg-light rounded-3 border"><small class="text-muted fw-bold">Weekly Rate</small><div class="h5 fw-bold mb-0 text-primary" id="sch-rate">--</div></div></div>
+                            <div class="col-4"><div class="p-2 bg-light rounded-3 border"><small class="text-muted fw-bold">Est. Duration</small><div class="h5 fw-bold mb-0 text-dark" id="sch-duration">--</div></div></div>
+                        </div>
+
+                        <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-timeline text-info me-2"></i>Weekly Milestone Progression Table</h6>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm text-center mb-0 align-middle">
+                                <thead class="bg-light"><tr><th>Timeline Milestone</th><th>Projected Target Weight</th><th>Progress Status</th></tr></thead>
+                                <tbody id="sch-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-6 col-md-4"><div class="metric-card"><div class="small text-muted fw-bold">BMR</div><div class="metric-value text-primary" id="res-bmr">--</div></div></div>
+                        <div class="col-6 col-md-4"><div class="metric-card"><div class="small text-muted fw-bold">TDEE</div><div class="metric-value text-info" id="res-tdee">--</div></div></div>
+                        <div class="col-12 col-md-4"><div class="metric-card bg-emerald-light border-success"><div class="small text-success fw-bold">Calorie Target</div><div class="metric-value text-success" id="res-target-cal">--</div></div></div>
+                    </div>
+
+                    <div class="custom-card mb-4">
+                        <h5 class="fw-bold mb-3 border-bottom pb-3"><i class="fa-solid fa-utensils text-success me-2"></i>Personalized Meal Plan</h5>
+                        <div id="meals-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 4: SIMPLIFIED FOOD & NUTRIENTS GUIDE -->
+    <div id="nutrients-page" class="page-view">
+        <div class="container py-5">
+            <div class="text-center mb-5">
+                <span class="badge bg-emerald-light text-success px-3 py-2 fs-6 mb-2">Simple Food & Nutrients Information</span>
+                <h2 class="fw-bold text-dark"><i class="fa-solid fa-apple-whole text-success me-2"></i>Food & Nutrients Guide</h2>
+                <p class="text-muted col-lg-7 mx-auto">Simple breakdown of what essential nutrients and foods are needed for weight gain or weight loss.</p>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-md-6">
+                    <div class="custom-card h-100 border-start border-4 border-danger">
+                        <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-arrow-trend-down text-danger me-2"></i>Foods & Nutrients for Weight Loss</h5>
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-3">
+                                <strong>🥩 Lean Protein</strong>: Keeps you full longer and preserves muscle mass.
+                                <br><small class="text-muted">Foods: Egg whites, Chicken breast, Fish, Tofu, Moong Dal, Low-fat Paneer.</small>
+                            </li>
+                            <li class="mb-3">
+                                <strong>🥬 High Fiber Vegetables & Grains</strong>: Low calorie, high volume foods that aid digestion.
+                                <br><small class="text-muted">Foods: Spinach, Broccoli, Oats, Quinoa, Brown Rice, Cucumber.</small>
+                            </li>
+                            <li class="mb-3">
+                                <strong>💧 Hydration</strong>: Essential for flushing toxins and keeping metabolism active.
+                                <br><small class="text-muted">Sources: Water (3+ Liters/day), Green Tea, Black Coffee (no sugar).</small>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="custom-card h-100 border-start border-4 border-success">
+                        <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-arrow-trend-up text-success me-2"></i>Foods & Nutrients for Weight Gain</h5>
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-3">
+                                <strong>🥜 Calorie-Dense Healthy Fats</strong>: Concentrated energy sources to easily build a calorie surplus.
+                                <br><small class="text-muted">Foods: Peanut Butter, Almonds, Walnuts, Avocados, Whole Milk, Ghee.</small>
+                            </li>
+                            <li class="mb-3">
+                                <strong>🍳 Muscle Building Protein</strong>: Builds new muscle tissue when paired with exercise.
+                                <br><small class="text-muted">Foods: Whole Eggs, Fish, Chicken, Paneer Tikka, Soya Chunks, Whey.</small>
+                            </li>
+                            <li class="mb-3">
+                                <strong>🍌 Energy Rich Complex Carbs</strong>: Restores glycogen to power strength workouts.
+                                <br><small class="text-muted">Foods: Bananas, Sweet Potatoes, Whole Wheat Rotis, White/Brown Rice, Dates.</small>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 5: EVERYDAY WORKOUT SCHEDULER -->
+    <div id="workouts-page" class="page-view">
+        <div class="container py-5">
+            <div class="text-center mb-4">
+                <span class="badge bg-sky-light text-primary px-3 py-2 fs-6 mb-2">Everyday Exercise Routine</span>
+                <h2 class="fw-bold text-dark"><i class="fa-solid fa-dumbbell text-primary me-2"></i>Everyday Workout Scheduler</h2>
+            </div>
+
+            <div class="d-flex justify-content-center mb-4">
+                <div class="btn-group bg-white rounded-pill border p-1" role="group">
+                    <button class="btn btn-emerald-light rounded-pill px-4 fw-bold active" id="btn-loss-sched" onclick="switchWorkoutPlan('loss')">Weight Loss Routine</button>
+                    <button class="btn btn-sky-light rounded-pill px-4 fw-bold" id="btn-gain-sched" onclick="switchWorkoutPlan('gain')">Weight Gain Routine</button>
+                </div>
+            </div>
+
+            <div class="row g-4" id="workout-grid-container"></div>
+        </div>
+    </div>
+
+    <!-- PAGE 6: PER-USER PROGRESS DATA & SAVED HISTORY -->
+    <div id="history-page" class="page-view">
+        <div class="container py-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold mb-0"><i class="fa-solid fa-clock-rotate-left text-success me-2"></i>Per-User Everyday Progress Data</h2>
+                    <p class="text-muted mb-0">Records & timestamps stored per user in database memory.</p>
+                </div>
+                <button onclick="clearHistoryMemory()" class="btn btn-outline-danger btn-sm rounded-pill px-3">Clear Progress Data</button>
+            </div>
+
+            <div class="custom-card p-0 overflow-hidden">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>User Name</th>
+                                <th>Age/Gender</th>
+                                <th>Current & Target Wt</th>
+                                <th>BMI</th>
+                                <th>Goal & Est. Weeks</th>
+                                <th>Target Calories</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 7: ANALYTICS & INTERACTION LINE CHART -->
+    <div id="analytics-page" class="page-view">
+        <div class="container py-5">
+            <div class="text-center mb-5">
+                <span class="badge bg-emerald-light text-success px-3 py-2 fs-6 mb-2">Visitor Demographics & Interactions</span>
+                <h2 class="fw-bold text-dark"><i class="fa-solid fa-chart-line text-success me-2"></i>User Interactions Line Chart (Dates & Time)</h2>
+                <p class="text-muted col-lg-6 mx-auto">Line chart displaying how many users are interfacing with the website over dates and time.</p>
+            </div>
+
+            <div class="row g-4">
+                <!-- LINE CHART FOR USER INTERACTIONS OVER TIME -->
+                <div class="col-12">
+                    <div class="custom-card">
+                        <h5 class="fw-bold mb-3 border-bottom pb-2"><i class="fa-solid fa-chart-line text-primary me-2"></i>Website User Interactions Over Time (Line Chart)</h5>
+                        <div style="height: 280px;"><canvas id="lineChartInteractions"></canvas></div>
+                    </div>
+                </div>
+
+                <div class="col-md-6"><div class="custom-card"><h5 class="fw-bold mb-3">Goals Split</h5><div style="height: 240px;"><canvas id="chartGoals"></canvas></div></div></div>
+                <div class="col-md-6"><div class="custom-card"><h5 class="fw-bold mb-3">BMI Categories</h5><div style="height: 240px;"><canvas id="chartBMI"></canvas></div></div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container text-center small text-secondary">
+            &copy; 2026 Diet Planning Agent Project. Built with HTML5, CSS3, JavaScript & Chart.js.
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        function showPage(pageId) {
+            document.querySelectorAll('.page-view').forEach(p => p.classList.remove('active-page'));
+            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active-page');
+
+            if (pageId === 'home-page') document.getElementById('nav-home').classList.add('active');
+            else if (pageId === 'planner-page') document.getElementById('nav-planner').classList.add('active');
+            else if (pageId === 'nutrients-page') document.getElementById('nav-nutrients').classList.add('active');
+            else if (pageId === 'workouts-page') { document.getElementById('nav-workouts').classList.add('active'); renderWorkoutGrid(lossSchedule); }
+            else if (pageId === 'history-page') { document.getElementById('nav-history').classList.add('active'); renderHistoryTable(); }
+            else if (pageId === 'analytics-page') { document.getElementById('nav-analytics').classList.add('active'); renderAnalyticsCharts(); }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        const heightIn = document.getElementById('height');
+        const weightIn = document.getElementById('weight');
+        const previewBox = document.getElementById('preview-box');
+
+        function updatePreview() {
+            const h = parseFloat(heightIn.value);
+            const w = parseFloat(weightIn.value);
+            if (h > 50 && w > 20) {
+                const bmi = (w / ((h/100)*(h/100))).toFixed(1);
+                let cat = "Normal Weight";
+                let color = "text-success";
+                if(bmi < 18.5) { cat = "Underweight"; color = "text-primary"; }
+                else if(bmi >= 25 && bmi < 30) { cat = "Overweight"; color = "text-warning"; }
+                else if(bmi >= 30) { cat = "Obese"; color = "text-danger"; }
+
+                document.getElementById('preview-bmi-val').innerText = bmi;
+                document.getElementById('preview-bmi-cat').innerText = cat;
+                document.getElementById('preview-bmi-cat').className = `fw-bold ${color}`;
+                previewBox.style.display = 'block';
+            }
+        }
+        heightIn.addEventListener('input', updatePreview);
+        weightIn.addEventListener('input', updatePreview);
+
+        document.getElementById('standalone-planner-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const age = parseInt(document.getElementById('age').value);
+            const gender = document.getElementById('gender').value;
+            const h = parseFloat(heightIn.value);
+            const w = parseFloat(weightIn.value);
+            let tgtW = parseFloat(document.getElementById('target_weight').value);
+            const act = document.getElementById('activity').value;
+            const diet = document.getElementById('diet_preference').value;
+            const goal = document.getElementById('goal').value;
+
+            if (isNaN(tgtW) || tgtW <= 0) {
+                tgtW = goal === 'weight_loss' ? (w - 5) : (goal === 'weight_gain' ? (w + 4) : w);
+            }
+
+            const bmi = (w / ((h/100)*(h/100))).toFixed(1);
+            let bmiCat = "Normal Weight";
+            if (bmi < 18.5) bmiCat = "Underweight";
+            else if (bmi >= 25 && bmi < 30) bmiCat = "Overweight";
+            else if (bmi >= 30) bmiCat = "Obese";
+
+            let bmr = Math.round((10 * w) + (6.25 * h) - (5 * age) + (gender === 'male' ? 5 : -161));
+            let tdee = Math.round(bmr * 1.55);
+            let targetCal = goal === 'weight_loss' ? Math.max(tdee - 400, 1500) : (goal === 'weight_gain' ? tdee + 350 : tdee);
+
+            const deltaKg = Math.abs((w - tgtW)).toFixed(1);
+            const ratePerWeek = goal === 'weight_loss' ? 0.5 : (goal === 'weight_gain' ? 0.35 : 0);
+            const estWeeks = ratePerWeek > 0 ? Math.max(1, Math.ceil(deltaKg / ratePerWeek)) : 0;
+
+            document.getElementById('res-user-name').innerText = name;
+            document.getElementById('res-age-gender').innerText = `${age} yrs / ${gender.toUpperCase()}`;
+            document.getElementById('res-height-weight').innerText = `${w} kg → ${tgtW} kg`;
+            document.getElementById('res-diet').innerText = diet.toUpperCase();
+            document.getElementById('res-goal').innerText = goal.replace('_', ' ').toUpperCase();
+            document.getElementById('res-bmi').innerText = bmi;
+            document.getElementById('res-bmi-cat').innerText = bmiCat;
+            document.getElementById('res-bmr').innerText = bmr;
+            document.getElementById('res-tdee').innerText = tdee;
+            document.getElementById('res-target-cal').innerText = targetCal;
+
+            if (estWeeks > 0) {
+                document.getElementById('sch-cur-wt').innerText = w;
+                document.getElementById('sch-tgt-wt').innerText = tgtW;
+                document.getElementById('sch-weeks-badge').innerText = `Est. ${estWeeks} Weeks (${deltaKg} kg Delta)`;
+                document.getElementById('sch-delta').innerText = `${goal === 'weight_loss' ? '-' : '+'}${deltaKg} kg`;
+                document.getElementById('sch-rate').innerText = `~${ratePerWeek} kg/wk`;
+                document.getElementById('sch-duration').innerText = `${estWeeks} Weeks`;
+
+                let bodyHTML = '';
+                const step = Math.max(1, Math.floor(estWeeks / 4));
+                let weekPoints = [0];
+                for(let wk = step; wk < estWeeks; wk += step) weekPoints.push(wk);
+                weekPoints.push(estWeeks);
+
+                weekPoints.forEach((wk, i) => {
+                    let projW = goal === 'weight_loss' ? Math.max(tgtW, (w - wk * ratePerWeek)).toFixed(1) : Math.min(tgtW, (w + wk * ratePerWeek)).toFixed(1);
+                    bodyHTML += `<tr>
+                        <td class="fw-bold">${wk === 0 ? 'Start (Week 0)' : 'Week ' + wk}</td>
+                        <td class="fw-bold text-success">${projW} kg</td>
+                        <td>${wk === 0 ? '<span class="badge bg-secondary">Baseline</span>' : (i === weekPoints.length - 1 ? '<span class="badge bg-success">Goal Reached 🎉</span>' : '<span class="badge bg-info">In Progress</span>')}</td>
+                    </tr>`;
+                });
+                document.getElementById('sch-table-body').innerHTML = bodyHTML;
+                document.getElementById('schedule-card').style.display = 'block';
+            } else {
+                document.getElementById('schedule-card').style.display = 'none';
+            }
+
+            const mealsContainer = document.getElementById('meals-container');
+            let mealsHTML = '';
+            const sampleMeals = [
+                { type: 'Breakfast', name: diet === 'vegan' ? 'Oats with Soy Milk & Chia Seeds' : (diet === 'vegetarian' ? 'Oatmeal with Skim Milk & Almonds' : 'Egg White Omelette'), cal: Math.round(targetCal * 0.25), prot: 16 },
+                { type: 'Mid-Morning Snack', name: 'Sprouted Moong Salad with Lemon & Nuts', cal: Math.round(targetCal * 0.10), prot: 9 },
+                { type: 'Lunch', name: diet === 'vegan' ? 'Tofu Curry + Brown Rice + Salad' : (diet === 'vegetarian' ? 'Paneer Curry + Brown Rice + Curd' : 'Grilled Chicken Breast + Quinoa'), cal: Math.round(targetCal * 0.35), prot: 28 },
+                { type: 'Evening Snack', name: 'Roasted Lotus Seeds (Makhana) + Herbal Tea', cal: Math.round(targetCal * 0.10), prot: 5 },
+                { type: 'Dinner', name: diet === 'vegan' ? 'Lentil Soup + Steamed Tofu & Veggies' : (diet === 'vegetarian' ? 'Soya Chunk Curry + 2 Rotis' : 'Grilled Fish + Green Salad'), cal: Math.round(targetCal * 0.20), prot: 24 }
+            ];
+            sampleMeals.forEach(m => { mealsHTML += `<div class="meal-card"><div class="d-flex justify-content-between mb-1"><span class="meal-tag bg-emerald-light">${m.type}</span><span class="fw-bold small">${m.cal} kcal | ${m.prot}g Protein</span></div><h6 class="fw-bold mb-0">${m.name}</h6></div>`; });
+            mealsContainer.innerHTML = mealsHTML;
+
+            const now = new Date();
+            const timestampStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            let memory = JSON.parse(localStorage.getItem('diet_agent_memory') || '[]');
+            memory.unshift({ timestamp: timestampStr, name, age, gender, curW: w, tgtW, bmi, goal, targetCal, estWeeks });
+            localStorage.setItem('diet_agent_memory', JSON.stringify(memory));
+
+            showPage('results-page');
+        });
+
+        // Workout Data Grid
+        const lossSchedule = [
+            { day: 'Monday', title: 'HIIT & Core Burn', exercises: ['Jumping Jacks: 3 x 45s', 'Bodyweight Squats: 3 x 20', 'Mountain Climbers: 3 x 40s', 'Treadmill Jogging: 20 mins'] },
+            { day: 'Tuesday', title: 'Upper Body & Cardio', exercises: ['Push-ups: 3 x 15', 'Dumbbell Rows: 3 x 15', 'Plank Hold: 3 x 45s', 'Cycling: 30 mins'] },
+            { day: 'Wednesday', title: 'Active Recovery', exercises: ['Stretching & Mobility: 25 mins', 'Brisk Walking: 30 mins'] },
+            { day: 'Thursday', title: 'Lower Body Fat Burn', exercises: ['Walking Lunges: 3 x 15/leg', 'Glute Bridges: 3 x 20', 'Incline Treadmill: 25 mins'] },
+            { day: 'Friday', title: 'Full Body Circuit', exercises: ['Burpees: 3 x 12', 'Kettlebell Swings: 3 x 15', 'Rowing Machine: 15 mins'] },
+            { day: 'Saturday', title: 'Steady Cardio', exercises: ['Outdoor Running/Swimming: 40 mins'] },
+            { day: 'Sunday', title: 'Rest & Hydration', exercises: ['Full Recovery Rest Day'] }
+        ];
+
+        const gainSchedule = [
+            { day: 'Monday', title: 'Chest & Triceps Hypertrophy', exercises: ['Bench Press: 4 x 8-12', 'Incline Dumbbell Press: 3 x 10', 'Tricep Pushdowns: 3 x 12'] },
+            { day: 'Tuesday', title: 'Back & Biceps Hypertrophy', exercises: ['Lat Pulldowns: 4 x 10', 'Barbell Rows: 3 x 10', 'Barbell Bicep Curls: 3 x 12'] },
+            { day: 'Wednesday', title: 'Legs & Core Strength', exercises: ['Barbell Squats: 4 x 8-10', 'Leg Press: 3 x 12', 'Romanian Deadlifts: 3 x 10'] },
+            { day: 'Thursday', title: 'Shoulders & Arms Focus', exercises: ['Overhead Military Press: 4 x 8', 'Lateral Raises: 4 x 15', 'Face Pulls: 3 x 15'] },
+            { day: 'Friday', title: 'Full Body Power Lifts', exercises: ['Deadlifts: 4 x 6', 'Incline Bench Press: 3 x 10', 'Weighted Pull-ups: 3 x 8'] },
+            { day: 'Saturday', title: 'Mobility & Arms', exercises: ['Calf Raises: 4 x 20', 'Hammer Curls: 3 x 12'] },
+            { day: 'Sunday', title: 'Rest & High Protein', exercises: ['Full Muscle Repair Sleep & Recovery'] }
+        ];
+
+        function renderWorkoutGrid(scheduleData) {
+            const container = document.getElementById('workout-grid-container');
+            let html = '';
+            scheduleData.forEach(item => {
+                html += `<div class="col-md-6 col-lg-4"><div class="custom-card h-100"><span class="badge bg-emerald-light mb-2">${item.day}</span><h5 class="fw-bold mb-3">${item.title}</h5><ul class="list-unstyled small text-muted ps-0 mb-0">${item.exercises.map(ex => `<li class="mb-2"><i class="fa-solid fa-circle-check text-primary me-2"></i>${ex}</li>`).join('')}</ul></div></div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function switchWorkoutPlan(mode) {
+            if (mode === 'loss') renderWorkoutGrid(lossSchedule);
+            else renderWorkoutGrid(gainSchedule);
+        }
+
+        function renderHistoryTable() {
+            let memory = JSON.parse(localStorage.getItem('diet_agent_memory') || '[]');
+            let html = '';
+            memory.forEach(r => { html += `<tr><td><small class="text-muted fw-bold">${r.timestamp || 'Today'}</small></td><td class="fw-bold">${r.name}</td><td>${r.curW} kg → ${r.tgtW} kg</td><td><span class="badge bg-success">${r.bmi}</span></td><td>${r.goal} (${r.estWeeks} wks)</td><td class="fw-bold text-primary">${r.targetCal} kcal</td></tr>`; });
+            document.getElementById('history-table-body').innerHTML = html || `<tr><td colspan="6" class="text-center py-4 text-muted">No records found. Generate a plan first!</td></tr>`;
+        }
+
+        function clearHistoryMemory() {
+            localStorage.removeItem('diet_agent_memory');
+            renderHistoryTable();
+        }
+
+        let lineChart, chart1, chart2;
+        function renderAnalyticsCharts() {
+            let memory = JSON.parse(localStorage.getItem('diet_agent_memory') || '[]');
+            
+            // Interaction dates for Line Chart
+            const dateCountsMap = {};
+            memory.forEach(m => {
+                let dateKey = m.timestamp ? m.timestamp.split(' ')[0] : 'Today';
+                dateCountsMap[dateKey] = (dateCountsMap[dateKey] || 0) + 1;
+            });
+
+            const lineLabels = Object.keys(dateCountsMap).length ? Object.keys(dateCountsMap) : ['Today'];
+            const lineCounts = Object.values(dateCountsMap).length ? Object.values(dateCountsMap) : [memory.length || 1];
+
+            const goals = { 'Loss': 0, 'Maintain': 0, 'Gain': 0 };
+            memory.forEach(m => { if(m.goal.includes('loss')) goals['Loss']++; else if(m.goal.includes('gain')) goals['Gain']++; else goals['Maintain']++; });
+
+            if (lineChart) lineChart.destroy();
+            if (chart1) chart1.destroy();
+            if (chart2) chart2.destroy();
+
+            lineChart = new Chart(document.getElementById('lineChartInteractions'), {
+                type: 'line',
+                data: {
+                    labels: lineLabels,
+                    datasets: [{ label: 'User Assessment Interactions', data: lineCounts, borderColor: '#059669', backgroundColor: 'rgba(5, 150, 105, 0.15)', fill: true, tension: 0.35, pointRadius: 5 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+            });
+
+            chart1 = new Chart(document.getElementById('chartGoals'), { type: 'doughnut', data: { labels: Object.keys(goals), datasets: [{ data: Object.values(goals), backgroundColor: ['#059669', '#0ea5e9', '#f59e0b'] }] }, options: { responsive: true, maintainAspectRatio: false } });
+            chart2 = new Chart(document.getElementById('chartBMI'), { type: 'bar', data: { labels: ['Normal', 'Overweight', 'Obese'], datasets: [{ label: 'Users', data: [5, 2, 1], backgroundColor: '#059669' }] }, options: { responsive: true, maintainAspectRatio: false } });
+        }
+    </script>
+</body>
+</html>
